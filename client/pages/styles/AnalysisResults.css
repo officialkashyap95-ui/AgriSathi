@@ -717,3 +717,21 @@
     flex-direction: column;
   }
 }
+
+.analysis-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #347348;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.analysis-back-button:hover {
+  background: #2c633e;
+}

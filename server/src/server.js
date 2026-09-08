@@ -5,12 +5,16 @@ require("dotenv").config();
 
 const connectDB = require("./config/db");
 const lotRoutes = require("./routes/lotRoutes");
+const analysisRoutes = require("./routes/analysisRoutes");
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
+// --------------------------------------------------
 // Connect to MongoDB
+// --------------------------------------------------
+
 connectDB();
 
 // --------------------------------------------------
@@ -21,10 +25,14 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
 // --------------------------------------------------
-// Static files
+// Static Files
 // --------------------------------------------------
 
 // Serve uploaded sample images
@@ -43,7 +51,29 @@ app.use(
 // API Routes
 // --------------------------------------------------
 
-app.use("/api/lots", lotRoutes);
+// Harvest lot routes
+//
+// Examples:
+// POST /api/lots
+// GET  /api/lots
+// GET  /api/lots/:id
+// POST /api/lots/:id/samples
+// GET  /api/lots/:id/samples
+//
+app.use(
+  "/api/lots",
+  lotRoutes
+);
+
+// Analysis routes
+//
+// Example:
+// POST /api/lots/:id/analyze
+//
+app.use(
+  "/api/lots",
+  analysisRoutes
+);
 
 // --------------------------------------------------
 // Health Check
@@ -72,7 +102,10 @@ app.use((req, res) => {
 // --------------------------------------------------
 
 app.use((err, req, res, next) => {
-  console.error("Server error:", err);
+  console.error(
+    "Server error:",
+    err
+  );
 
   res.status(500).json({
     success: false,

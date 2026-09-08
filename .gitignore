@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Python environments
+**/venv/
+**/.venv/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build
+dist/
+build/
+
+# ML datasets
+ai-service/dataset/raw/
+ai-service/dataset/processed/
+
+# ML model weights
+ai-service/models/**/*.pt
+ai-service/models/**/*.pth
+ai-service/models/**/*.onnx
+ai-service/models/**/*.engine
+
+# Training outputs
+ai-service/runs/
+ai-service/experiments/
+
+# Uploaded files
+uploads/
+**/uploads/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store

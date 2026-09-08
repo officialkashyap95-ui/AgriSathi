@@ -1,0 +1,8 @@
+path: /Users/kashyap_piyush/Desktop/AgriSathi/ai-service/dataset/processed/tomato-yolo
+
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: tomato

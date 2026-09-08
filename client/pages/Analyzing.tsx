@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import {
   ArrowLeft,
@@ -7,23 +7,98 @@ import {
   ImageIcon,
   LoaderCircle,
   Sprout,
+  AlertCircle,
 } from "lucide-react"
+
+import api from "../src/lib/api"
+
+type AnalysisState =
+  | "starting"
+  | "success"
+  | "error"
 
 export default function Analyzing() {
   const navigate = useNavigate()
   const { id } = useParams()
 
+  const [analysisState, setAnalysisState] =
+    useState<AnalysisState>("starting")
+
+  const [errorMessage, setErrorMessage] =
+    useState("")
+
   useEffect(() => {
-    if (!id) return
+    if (!id) {
+      setAnalysisState("error")
+      setErrorMessage("Harvest lot ID is missing.")
+      return
+    }
 
-    // Demo analysis simulation.
-    // Replace this with the real AI API call later.
-    const timer = setTimeout(() => {
-      navigate(`/harvests/${id}/results`)
-    }, 2500)
+    let cancelled = false
 
-    return () => clearTimeout(timer)
+    const analyzeLot = async () => {
+      try {
+        setAnalysisState("starting")
+        setErrorMessage("")
+
+        const response = await api.post(
+          `/lots/${id}/analyze`
+        )
+
+        if (cancelled) return
+
+        if (!response.data?.success) {
+          throw new Error(
+            response.data?.message ||
+              "Harvest analysis failed."
+          )
+        }
+
+        setAnalysisState("success")
+
+        // Give the success state a moment so the
+        // user can see that analysis completed.
+        setTimeout(() => {
+          if (!cancelled) {
+            navigate(
+              `/harvests/${id}/results`,
+              { replace: true }
+            )
+          }
+        }, 700)
+      } catch (error: any) {
+        if (cancelled) return
+
+        console.error(
+          "Harvest analysis failed:",
+          error
+        )
+
+        const message =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Unable to analyze this harvest lot."
+
+        setAnalysisState("error")
+        setErrorMessage(message)
+      }
+    }
+
+    analyzeLot()
+
+    return () => {
+      cancelled = true
+    }
   }, [id, navigate])
+
+  const isProcessing =
+    analysisState === "starting"
+
+  const isSuccess =
+    analysisState === "success"
+
+  const isError =
+    analysisState === "error"
 
   return (
     <div className="min-h-screen bg-[#f8f8f3] text-[#17231c]">
@@ -42,7 +117,11 @@ export default function Analyzing() {
               </h1>
 
               <p className="mt-2 text-sm leading-6 text-[#68766d] sm:text-base">
-                Analyzing your representative samples...
+                {isError
+                  ? "We couldn't complete the analysis."
+                  : isSuccess
+                    ? "Your harvest analysis is complete."
+                    : "Analyzing your representative samples..."}
               </p>
             </div>
 
@@ -58,41 +137,73 @@ export default function Analyzing() {
 
         <section className="w-full rounded-2xl border border-[#dfe5df] bg-white p-7 text-center shadow-sm sm:p-10">
 
-          {/* AI icon */}
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#edf7ef] text-[#075b2b]">
-            <Cpu size={30} />
+          {/* Status icon */}
+          <div
+            className={[
+              "mx-auto flex h-16 w-16 items-center justify-center rounded-2xl",
+              isError
+                ? "bg-red-50 text-red-600"
+                : isSuccess
+                  ? "bg-[#e8f5eb] text-[#23834b]"
+                  : "bg-[#edf7ef] text-[#075b2b]",
+            ].join(" ")}
+          >
+            {isError ? (
+              <AlertCircle size={30} />
+            ) : isSuccess ? (
+              <Check size={30} />
+            ) : (
+              <Cpu size={30} />
+            )}
           </div>
 
           <h2 className="mt-6 text-xl font-bold text-[#17251c] sm:text-2xl">
-            Analyzing your harvest
+            {isError
+              ? "Analysis couldn't be completed"
+              : isSuccess
+                ? "Analysis complete"
+                : "Analyzing your harvest"}
           </h2>
 
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#68766d] sm:text-base">
-            AgriSathi is processing your representative samples to estimate
-            the visible quality distribution of your tomato lot.
+            {isError
+              ? "Please check the issue below and try the analysis again."
+              : isSuccess
+                ? "AgriSathi has completed the visual batch assessment."
+                : "AgriSathi is processing your representative samples to estimate the visible quality distribution of your tomato lot."}
           </p>
 
-          {/* Processing indicator */}
-          <div className="mx-auto mt-8 flex max-w-md items-center gap-3 rounded-xl border border-[#e3e9e3] bg-[#fafcf9] p-4 text-left">
+          {/* Processing / success indicator */}
+          {!isError && (
+            <div className="mx-auto mt-8 flex max-w-md items-center gap-3 rounded-xl border border-[#e3e9e3] bg-[#fafcf9] p-4 text-left">
 
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#eef8f0] text-[#23834b]">
-              <LoaderCircle
-                size={20}
-                className="animate-spin"
-              />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#eef8f0] text-[#23834b]">
+                {isSuccess ? (
+                  <Check size={20} />
+                ) : (
+                  <LoaderCircle
+                    size={20}
+                    className="animate-spin"
+                  />
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#344139]">
+                  {isSuccess
+                    ? "Batch assessment completed"
+                    : "Quality assessment in progress"}
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-[#718078]">
+                  {isSuccess
+                    ? "Preparing your harvest results."
+                    : "Reviewing sample images and running AI detection."}
+                </p>
+              </div>
+
             </div>
-
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#344139]">
-                Quality assessment in progress
-              </p>
-
-              <p className="mt-1 text-xs leading-5 text-[#718078]">
-                Reviewing sample images and preparing the batch assessment.
-              </p>
-            </div>
-
-          </div>
+          )}
 
           {/* Steps */}
           <div className="mx-auto mt-7 max-w-md space-y-3 text-left">
@@ -104,37 +215,67 @@ export default function Analyzing() {
 
             <AnalysisStep
               label="Visual quality assessment"
-              active
+              completed={isSuccess}
+              active={isProcessing}
             />
 
             <AnalysisStep
               label="Batch quality distribution"
+              completed={isSuccess}
+              active={false}
             />
 
             <AnalysisStep
               label="Smart routing recommendation"
+              active={false}
             />
 
           </div>
 
-          {/* Demo notice */}
-          <div className="mt-7 rounded-xl bg-[#f4f9f3] px-4 py-3">
-            <p className="text-xs leading-5 text-[#68766d]">
-              <span className="font-semibold text-[#344139]">
-                Demo analysis:
-              </span>{" "}
-              This hackathon build uses an illustrative tomato assessment.
-              The production AI model will be connected to this workflow later.
-            </p>
-          </div>
+          {/* Error */}
+          {isError && (
+            <div className="mx-auto mt-7 max-w-md rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-left">
+              <div className="flex gap-3">
+                <AlertCircle
+                  size={18}
+                  className="mt-0.5 shrink-0 text-red-600"
+                />
 
-          {/* Back */}
+                <div>
+                  <p className="text-sm font-semibold text-red-800">
+                    Analysis failed
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-red-700">
+                    {errorMessage}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Demo notice */}
+          {!isError && (
+            <div className="mt-7 rounded-xl bg-[#f4f9f3] px-4 py-3">
+              <p className="text-xs leading-5 text-[#68766d]">
+                <span className="font-semibold text-[#344139]">
+                  Assessment mode:
+                </span>{" "}
+                The current build uses real tomato detection with an
+                illustrative batch quality distribution. The production
+                ripeness and defect models will replace the demo distribution
+                without changing this workflow.
+              </p>
+            </div>
+          )}
+
+          {/* Back / retry */}
           <Link
             to={`/harvests/${id}/sampling`}
             className="mx-auto mt-7 flex h-11 w-full max-w-xs items-center justify-center gap-2 rounded-xl border border-[#d5ddd6] bg-white px-5 text-sm font-semibold text-[#46544c] transition hover:bg-[#f7f9f6]"
           >
             <ArrowLeft size={17} />
-            Back to Samples
+            {isError ? "Back to Samples" : "Back to Samples"}
           </Link>
 
         </section>

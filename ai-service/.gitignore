@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Dataset files
+dataset/raw/
+dataset/processed/
+
+# ML model weights
+models/**/*.pt
+models/**/*.onnx
+models/**/*.pth
+models/**/*.engine
+
+# Training outputs
+runs/
+experiments/
+
+# Uploaded/sample images
+uploads/
+*.jpg
+*.jpeg
+*.png
+*.webp
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
